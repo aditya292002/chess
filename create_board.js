@@ -15,6 +15,17 @@ function char_to_index(x) {
     if (x === 'h') return 8;
 }
 
+function index_to_char(i) {
+    if (i === 1) return 'a';
+    if (i === 2) return 'b';
+    if (i === 3) return 'c';
+    if (i === 4) return 'd';
+    if (i === 5) return 'e';
+    if (i === 6) return 'f';
+    if (i === 7) return 'g';
+    if (i === 8) return 'h';
+}
+
 function return_piece(piece_in_str) {
     if (piece_in_str == 'king') return king
     else if (piece_in_str == 'queen') return queen

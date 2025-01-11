@@ -1,12 +1,21 @@
 const gameBoard = document.querySelector('#gameboard');
 const playerDisplay = document.querySelector('#player');
 const infoDisplay = document.querySelector('#info-display');
+const showScore = document.querySelector('#score')
+const showCurrentMove = document.querySelector('#current-move')
+const opponentMoveShow = document.querySelector('#opponent-move-show')
 const width = 8;
 
 var lives_left = 5;
 let playerGo; // denotes player turn
 let startPositionId = -1;
 let draggedElement;
+let endPositionId = -1;
+let startElement;
+let endElement;
+let computer_turn = false;
+let score = 0;
+let ind = 0
 
 let taken, takenByOpponent;
 let targetId, startId, idInterval;
@@ -18,23 +27,48 @@ let allSquares;
 function move_to_index(move) {
     const x = char_to_index(move[0]); // Column (a-h -> 0-7)
     const y = parseInt(move[1], 10);
-    index = (8 * (y - 1)) + x;
+    let index = (8 * (y - 1)) + x;
     return index;
+}
+
+function get_Move(index) {
+    let row = Math.ceil(index / 8);
+    let col = index % 8 || 8;
+    return index_to_char(col) + row;
+}
+
+
+function check_move(move) {
+    console.log("check_move : ", move)
+    let move_st = move[0] + move[1]
+    let move_end = move[2] + move[3]
+    if(move_to_index(move_st) == startPositionId && move_to_index(move_end) == endPositionId) {
+        return true;
+    }
+    return false;
+}
+
+function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
 }
 
 function init() {
     createBoard();
 
     moves_str = current_puzzle_info['Moves'];
-    moves = moves_str.split(' ');
+    let moves = moves_str.split(' ');
     first_move = moves[0];
     first_move_start = first_move[0] + first_move[1];
+    console.log("first_move_start : ", first_move_start)
+    console.log(move_to_index(first_move_start))
+    console.log(startPiecesColor[move_to_index(first_move_start) - 1])
+
     if (startPiecesColor[move_to_index(first_move_start)] == 'W') {
         playerGo = 'white';
     } else {
         playerGo = 'black';
     }
-
+    console.log("playergo : ", playerGo)
     playerDisplay.textContent = playerGo;
 
     allSquares = document.querySelectorAll('.square');
@@ -43,11 +77,14 @@ function init() {
         square.addEventListener('dragover', dragOver);
         square.addEventListener('drop', dragDrop);
     });
+    console.log(moves)
 }
 
 function dragStart(e) {
     draggedElement = e.target;
+    startElement = e.target;
     startPositionId = draggedElement.parentNode.getAttribute('square-id');
+    console.log("square id start : ", startPositionId)
 }
 
 function dragOver(e) {
@@ -56,115 +93,56 @@ function dragOver(e) {
 
 function dragDrop(e) {
     e.stopPropagation();
+    // console.log(e.target)
+    // console.log(e.target.getAttribute('square-id'))
+    endPositionId = e.target.getAttribute('square-id');
+    console.log("start index : ", startPositionId);
+    console.log("end index : ", endPositionId);
+    endElement = e.target;
+    moves_str = current_puzzle_info['Moves'];
+    let moves = moves_str.split(' ');
+    if(check_move(moves[ind])) {
+        // Make the move
+        console.log("inside")
+        console.log(startElement)
+        console.log(endElement)
+        // let piece = move_from.firstChild;
+        // console.log("piece",piece)
+        // move_to.firstChild = piece;
+        console.log("asasasasas")
+        console.log(startPositionId, endPositionId)
+        // move_to.innerHTML = piece;
+        endElement.appendChild(draggedElement);
+        showCurrentMove.innerHTML = "Move " + moves[ind] + " is correct";
+        showCurrentMove.style.color = 'darkgreen';
 
-    correctGo = draggedElement.firstChild.classList.contains(playerGo + '-piece');
-    opponentGo = playerGo === 'black' ? 'white' : 'black';
-    taken = e.target.classList.contains('piece');
-    takenByOpponent = e.target.firstChild?.classList.contains(opponentGo + '-piece');
+        sleep(2000)
 
-    if (correctGo) {
-        if (isValidMove(e.target)) {
-            notifyPlayer('', false);
-            if (!taken) {
-                e.target.append(draggedElement);
-                if (!checkWin()) changePlayer();
-            } else if (takenByOpponent) {
-                document.getElementById(`${playerGo}-captures`).innerHTML += `<div class="captured-piece">${e.target.innerHTML}</div>`;
-                e.target.parentNode.append(draggedElement);
-                e.target.remove();
-                if (!checkWin()) changePlayer();
-            } else notifyPlayer('You can not go there!');
-        } else notifyPlayer('You can not go there!');
-    }
-}
-
-function notifyPlayer(message, useTimer = true) {
-    infoDisplay.textContent = message;
-    if (useTimer) setTimeout(() => { infoDisplay.textContent = '' }, 2000);
-}
-
-function changePlayer() {
-    playerGo = playerGo === 'black' ? 'white' : 'black';
-    playerDisplay.textContent = playerGo;
-}
-
-const validMoves = {
-    'pawn': () => {
-        let direction = 1;
-        if (playerGo === 'black') {
-            startRow = width - 1 - startRow;
-            targetRow = width - 1 - targetRow;
-            direction = -1;
+        // ind += 1
+        ind += 1
+        // computer will make move moves[i]
+        let start_id = move_to_index(moves[ind][0] + moves[ind][1])
+        let end_id = move_to_index(moves[ind][2] + moves[ind][3])
+        let start_element = document.querySelector('[square-id="' + start_id + '"]');
+        let end_element = document.querySelector('[square-id="' + end_id + '"]');
+        end_element.append(start_element.firstChild)
+        ind += 1
+        // show player win
+        if(ind == moves.length) {
+            showCurrentMove.innerHTML = "Win";
+            showCurrentMove.style.color = 'darkgreen';
+        } 
+        else {
+            opponentMoveShow.innerHTML = "Make the next move"
         }
-        const blockedByPiece = Boolean(document.querySelector(`[square-id="${startId + direction * width}"]`).firstChild);
-
-        return targetRow > startRow && ((!taken && !blockedByPiece && startRow === 1 && idInterval === 2 * width) || (!taken && idInterval === width) || (takenByOpponent && (idInterval === width - 1 || idInterval === width + 1)));
-    },
-    'rook': () => {
-        if ((rowInterval !== 0 && colInterval === 0) || (rowInterval === 0 && colInterval !== 0)) {
-            for (let i = Math.abs(rowInterval ? rowInterval : colInterval) - 1; i > 0; --i) {
-                const id = rowInterval ? startId + Math.sign(rowInterval) * i * width : startId + Math.sign(colInterval) * i;
-                if (Boolean(document.querySelector(`[square-id="${id}"]`).firstChild)) {
-                    return false;
-                }
-            }
-            return true;
-        }
-        return false;
-    },
-    'bishop': () => {
-        if (Math.abs(rowInterval) === Math.abs(colInterval) && rowInterval !== 0) {
-            for (let i = Math.abs(rowInterval) - 1; i > 0; --i) {
-                if (Boolean(document.querySelector(`[square-id="${startId + Math.sign(rowInterval) * i * width + Math.sign(colInterval) * i}"]`).firstChild)) {
-                    return false;
-                }
-            }
-            return true;
-        }
-        return false;
-    },
-    'knight': () => {
-        return (Math.abs(rowInterval) === 2 && Math.abs(colInterval) === 1) || (Math.abs(colInterval) === 2 && Math.abs(rowInterval) === 1);
-    },
-    'queen': () => {
-        return (validMoves['rook']() || validMoves['bishop']());
-    },
-    'king': () => {
-        return (idInterval === width || idInterval === width - 1 || idInterval === width + 1 || idInterval === 1);
     }
-}
-
-function isValidMove(target) {
-    targetId = Number(target.getAttribute('square-id') || target.parentNode.getAttribute('square-id'));
-    startId = Number(startPositionId);
-    idInterval = Math.abs(targetId - startId);
-
-    startRow = Math.floor(startId / width);
-    startCol = startId % width;
-    targetRow = Math.floor(targetId / width);
-    targetCol = targetId % width;
-
-    rowInterval = targetRow - startRow;
-    colInterval = targetCol - startCol;
-
-    return validMoves[draggedElement.id]();
-}
-
-function checkWin() {
-    const kings = document.querySelectorAll('#gameboard #king');
-
-    if (kings.length < 2) {
-        notifyPlayer(`${playerGo} player wins`, false);
-        playerDisplay.parentElement.textContent = '';
-        playerGo = '';
-        document.querySelectorAll('.piece').forEach(piece => {
-            piece.setAttribute('draggable', false);
-        });
-
-        return true;
+    else {
+        // donot make the move
+        console.log("not valid move")
+        let move_made = get_Move(startPositionId) + get_Move(endPositionId)
+        showCurrentMove.innerHTML = "Move " + move_made + " is incorrect";
+        showCurrentMove.style.color = 'red'; 
     }
-
-    return false;
 }
 
 init();
