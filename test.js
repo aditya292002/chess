@@ -1,21 +1,22 @@
-function index_to_char(i) {
-    if (i === 1) return 'a';
-    if (i === 2) return 'b';
-    if (i === 3) return 'c';
-    if (i === 4) return 'd';
-    if (i === 5) return 'e';
-    if (i === 6) return 'f';
-    if (i === 7) return 'g';
-    if (i === 8) return 'h';
+function char_to_index(x) {
+    if (x === 'a') return 1;
+    if (x === 'b') return 2;
+    if (x === 'c') return 3;
+    if (x === 'd') return 4;
+    if (x === 'e') return 5;
+    if (x === 'f') return 6;
+    if (x === 'g') return 7;
+    if (x === 'h') return 8;
 }
-function get_Move(index) {
-    let row = Math.ceil(index / 8);
-    let col = index % 8 || 8;
-    return index_to_char(col) + row;
+
+function move_to_index(move) {
+    const x = char_to_index(move[0]); // Column (a-h -> 0-7)
+    const y = parseInt(move[1], 10);
+    let index = (8 * (y - 1)) + x;
+    return index;
 }
 
 
-for(let i = 1; i <= 64; i++) {
-    console.log(get_Move(i))
-}
-// console.log(get_Move(64))
+console.log(move_to_index("a1"))
+console.log(move_to_index("h8"))
+console.log(move_to_index("f7"))

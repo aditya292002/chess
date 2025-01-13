@@ -1,39 +1,8 @@
-var current_puzzle_info;
-var done = []; // the row or puzzle user have already solved
+var current_puzzle_info; // denotes current puzzle all information
+var done = []; // contains puzzle index user have already solved
 
-const startPieces = Array(64).fill('');
-const startPiecesColor = Array(64).fill('');
-
-function char_to_index(x) {
-    if (x === 'a') return 1;
-    if (x === 'b') return 2;
-    if (x === 'c') return 3;
-    if (x === 'd') return 4;
-    if (x === 'e') return 5;
-    if (x === 'f') return 6;
-    if (x === 'g') return 7;
-    if (x === 'h') return 8;
-}
-
-function index_to_char(i) {
-    if (i === 1) return 'a';
-    if (i === 2) return 'b';
-    if (i === 3) return 'c';
-    if (i === 4) return 'd';
-    if (i === 5) return 'e';
-    if (i === 6) return 'f';
-    if (i === 7) return 'g';
-    if (i === 8) return 'h';
-}
-
-function return_piece(piece_in_str) {
-    if (piece_in_str == 'king') return king
-    else if (piece_in_str == 'queen') return queen
-    else if (piece_in_str == 'rook') return rook
-    else if (piece_in_str == 'pawn') return pawn
-    else if (piece_in_str == 'bishop') return bishop
-    else if (piece_in_str == 'knight') return knight
-}
+var startPieces = Array(64).fill('');
+var startPiecesColor = Array(64).fill('');
 
 // Update pieces based on positions and color
 function updatePieces(positions, color) {
@@ -89,6 +58,7 @@ function createBoard() {
         randomIndex = Math.floor(Math.random() * 1000);
     } while (done.includes(randomIndex));
 
+    done.push(randomIndex)
     current_puzzle_info = puzzles[randomIndex];
 
     // Parse FEN from the selected puzzle
@@ -100,3 +70,5 @@ function createBoard() {
     // Render the board
     renderBoard();
 }
+
+

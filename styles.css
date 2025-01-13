@@ -101,3 +101,20 @@ path {
     background-color: rgba(0, 0, 0, 0.7);
     border-radius: 5px;
 }
+
+
+#refresh-puzzle {
+    background-color: rgb(177, 62, 87);
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    font-size: 1em;
+    font-weight: bold;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+#refresh-puzzle:hover {
+    background-color: rgb(150, 50, 70);
+}
