@@ -30,13 +30,14 @@ function check_current_move(move) {
 
 function init() {
     refresh_puzzle.style.display = 'none';
+    ind = 0; // Initialize ind to 0
     // if(done.length == 1) {
         createBoard();
     // }
-    
-    ind = 0;
+    // make the first move and update the index and wait for the 
 
-    moves_str = current_puzzle_info['Moves'];
+
+    let moves_str = current_puzzle_info['Moves'];
     moves = moves_str.split(' ');
     first_move = moves[0];
     first_move_start = first_move[0] + first_move[1];
@@ -45,9 +46,9 @@ function init() {
     console.log(startPiecesColor[move_to_index(first_move_start) - 1])
 
     if (startPiecesColor[move_to_index(first_move_start) - 1] == 'W') {
-        playerGo = 'white';
-    } else {
         playerGo = 'black';
+    } else {
+        playerGo = 'white';
     }
     console.log("playergo : ", playerGo)
     playerDisplay.textContent = playerGo;
@@ -59,6 +60,26 @@ function init() {
         square.addEventListener('drop', dragDrop);
     });
     console.log(moves)
+
+
+
+    let start_id = move_to_index(moves[ind][0] + moves[ind][1])
+    let end_id = move_to_index(moves[ind][2] + moves[ind][3])
+    let start_element = document.querySelector('[square-id="' + start_id + '"]');
+    let end_element = document.querySelector('[square-id="' + end_id + '"]');
+    end_element.innerHTML = '';
+    end_element.append(start_element.firstChild);
+    // mention the emode made
+    infoDisplay.innerHTML = '';
+    infoDisplay.innerHTML = "Move " + moves[ind] + " is made";
+    infoDisplay.style.color = 'blue';
+    infoDisplay.style.fontSize = '1.5em';
+    infoDisplay.style.fontWeight = 'bold';
+    infoDisplay.style.backgroundColor = 'lightgrey';
+    infoDisplay.style.padding = '5px';
+    infoDisplay.style.border = '1px solid blue';
+    infoDisplay.style.borderRadius = '3px';
+    ind = 1;
 }
 
 function dragStart(e) {
@@ -92,14 +113,6 @@ function dragDrop(e) {
 
 
         // ind += 1
-        ind += 1
-        // computer will make move moves[i]
-        let start_id = move_to_index(moves[ind][0] + moves[ind][1])
-        let end_id = move_to_index(moves[ind][2] + moves[ind][3])
-        let start_element = document.querySelector('[square-id="' + start_id + '"]');
-        let end_element = document.querySelector('[square-id="' + end_id + '"]');
-        end_element.innerHTML = '';
-        end_element.append(start_element.firstChild);
         ind += 1
         // show player win
         if(ind == moves.length) {
@@ -135,6 +148,14 @@ function dragDrop(e) {
             refresh_puzzle.addEventListener('click', refreshRenderBoard);
         } 
         else {
+            // computer will make move moves[i]
+            let start_id = move_to_index(moves[ind][0] + moves[ind][1])
+            let end_id = move_to_index(moves[ind][2] + moves[ind][3])
+            let start_element = document.querySelector('[square-id="' + start_id + '"]');
+            let end_element = document.querySelector('[square-id="' + end_id + '"]');
+            end_element.innerHTML = '';
+            end_element.append(start_element.firstChild);
+            ind += 1
             opponentMoveShow.innerHTML = "Make the next move"
         }
     }
@@ -159,9 +180,9 @@ function refreshInit() {
     console.log(startPiecesColor[move_to_index(first_move_start) - 1])
 
     if (startPiecesColor[move_to_index(first_move_start) - 1] == 'W') {
-        playerGo = 'white';
-    } else {
         playerGo = 'black';
+    } else {
+        playerGo = 'white';
     }
     console.log("playergo : ", playerGo)
     playerDisplay.textContent = playerGo;

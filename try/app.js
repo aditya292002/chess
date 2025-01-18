@@ -174,7 +174,7 @@ const validMoves = {
     'knight': () => {
         // Two steps up or down, one step right or left - Two steps right or left, one step up or down
         return (Math.abs(rowInterval) === 2 && Math.abs(colInterval) === 1) || (Math.abs(colInterval) === 2 && Math.abs(rowInterval) === 1);
-    },
+    }, 
     'queen': () => {
         // A queen is simply just a rook and a bishop at the same time
         // return this.rook() || this.bishop();
