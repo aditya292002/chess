@@ -1,247 +1,200 @@
-const showScore = document.querySelector('#score')
-const gameBoard = document.querySelector('#gameboard');
-const playerDisplay = document.querySelector('#player');
-const showCurrentMove = document.querySelector('#current-move')
-const opponentMoveShow = document.querySelector('#opponent-move-show')
-const infoDisplay = document.querySelector('#info-display');
-const refresh_puzzle = document.querySelector('#refresh-puzzle')
-const width = 8;
-
-
-var startPositionId = -1; // denotes square-id of the div the darg action inititted
-var endPositionId = -1; // denotes square-id
-var startElement; // denotes actual element drag started
-var endElement; // denotes actual element
-var ind; // denotes index of the moves array of current puzzle 
-var allSquares;
-var moves;
-var playerGo; // actally denotes player color
-
-// checks current move with the - move made by the player
-function check_current_move(move) {
-    console.log("check_move : ", move)
-    let move_st = move[0] + move[1]
-    let move_end = move[2] + move[3]
-    if(move_to_index(move_st) == startPositionId && move_to_index(move_end) == endPositionId) {
-        return true;
+const pieces = {
+    'white': {
+        'king': '♔',
+        'queen': '♕',
+        'rook': '♖',
+        'bishop': '♗',
+        'knight': '♘',
+        'pawn': '♙'
+    },
+    'black': {
+        'king': '♚',
+        'queen': '♛',
+        'rook': '♜',
+        'bishop': '♝',
+        'knight': '♞',
+        'pawn': '♟'
     }
-    return false;
+};
+
+puzzle =     {
+    "PuzzleId": "00008",
+    "FEN": "r6k/pp2r2p/4Rp1Q/3p4/8/1N1P2R1/PqP2bPP/7K b - - 0 24",
+    "Moves": "f2g3 e6e7 b2b1 b3c1 b1c1 h6c1",
+    "Rating": "1902",
+    "RatingDeviation": "76",
+    "Popularity": "95",
+    "NbPlays": "7226",
+    "Themes": "crushing hangingPiece long middlegame",
+    "GameUrl": "https://lichess.org/787zsVup/black#48",
+    "OpeningTags": ""
 }
 
-function init() {
-    refresh_puzzle.style.display = 'none';
-    ind = 0; // Initialize ind to 0
-    // if(done.length == 1) {
-        createBoard();
-    // }
-    // make the first move and update the index and wait for the 
+let board = [];
+let selectedPiece = null;
+let currentTurn = 'white';
+let validMoves = [];
 
+function initializeBoard() {
+    const initialSetup = [
+        ['rook', 'knight', 'bishop', 'queen', 'king', 'bishop', 'knight', 'rook'],
+        ['pawn', 'pawn', 'pawn', 'pawn', 'pawn', 'pawn', 'pawn', 'pawn'],
+        [null, null, null, null, null, null, null, null],
+        [null, null, null, null, null, null, null, null],
+        [null, null, null, null, null, null, null, null],
+        [null, null, null, null, null, null, null, null],
+        ['pawn', 'pawn', 'pawn', 'pawn', 'pawn', 'pawn', 'pawn', 'pawn'],
+        ['rook', 'knight', 'bishop', 'queen', 'king', 'bishop', 'knight', 'rook']
+    ];
 
-    let moves_str = current_puzzle_info['Moves'];
-    moves = moves_str.split(' ');
-    first_move = moves[0];
-    first_move_start = first_move[0] + first_move[1];
-    console.log("first_move_start : ", first_move_start)
-    console.log(move_to_index(first_move_start))
-    console.log(startPiecesColor[move_to_index(first_move_start) - 1])
+    board = initialSetup.map((row, i) => 
+        row.map((piece, j) => ({
+            piece: piece,
+            color: i < 2 ? 'black' : i > 5 ? 'white' : null
+        }))
+    );
+}
 
-    if (startPiecesColor[move_to_index(first_move_start) - 1] == 'W') {
-        playerGo = 'black';
+function createBoard() {
+    const boardElement = document.getElementById('chess-board');
+    boardElement.innerHTML = '';
+
+    for (let i = 0; i < 8; i++) {
+        for (let j = 0; j < 8; j++) {
+            const square = document.createElement('div');
+            square.className = `square ${(i + j) % 2 === 0 ? 'white' : 'black'}`;
+            square.dataset.row = i;
+            square.dataset.col = j;
+                
+            const piece = board[i][j];
+            if (piece.piece) {
+                square.innerHTML = `<span class="piece">${pieces[piece.color][piece.piece]}</span>`;
+            }
+
+            square.addEventListener('click', handleSquareClick);
+            boardElement.appendChild(square);
+        }
+    }
+}
+
+function handleSquareClick(event) {
+    const row = parseInt(event.currentTarget.dataset.row);
+    const col = parseInt(event.currentTarget.dataset.col);
+    
+    clearHighlights();
+
+    if (selectedPiece) {
+        if (validMoves.some(move => move.row === row && move.col === col)) {
+            movePiece(selectedPiece, { row, col });
+            selectedPiece = null;
+            validMoves = [];
+            currentTurn = currentTurn === 'white' ? 'black' : 'white';
+            document.getElementById('current-turn').textContent = `Current Turn: ${currentTurn.charAt(0).toUpperCase() + currentTurn.slice(1)}`;
+        } else {
+            selectedPiece = null;
+        }
     } else {
-        playerGo = 'white';
+        const piece = board[row][col];
+        if (piece.piece && piece.color === currentTurn) {
+            selectedPiece = { row, col };
+            event.currentTarget.classList.add('selected');
+            validMoves = getValidMoves(row, col);
+            highlightValidMoves();
+        }
     }
-    console.log("playergo : ", playerGo)
-    playerDisplay.textContent = playerGo;
-
-    allSquares = document.querySelectorAll('.square');
-    allSquares.forEach(square => {
-        square.addEventListener('dragstart', dragStart);
-        square.addEventListener('dragover', dragOver);
-        square.addEventListener('drop', dragDrop);
-    });
-    console.log(moves)
-
-
-
-    let start_id = move_to_index(moves[ind][0] + moves[ind][1])
-    let end_id = move_to_index(moves[ind][2] + moves[ind][3])
-    let start_element = document.querySelector('[square-id="' + start_id + '"]');
-    let end_element = document.querySelector('[square-id="' + end_id + '"]');
-    end_element.innerHTML = '';
-    end_element.append(start_element.firstChild);
-    // mention the emode made
-    infoDisplay.innerHTML = '';
-    infoDisplay.innerHTML = "Move " + moves[ind] + " is made";
-    infoDisplay.style.color = 'blue';
-    infoDisplay.style.fontSize = '1.5em';
-    infoDisplay.style.fontWeight = 'bold';
-    infoDisplay.style.backgroundColor = 'lightgrey';
-    infoDisplay.style.padding = '5px';
-    infoDisplay.style.border = '1px solid blue';
-    infoDisplay.style.borderRadius = '3px';
-    ind = 1;
 }
 
-function dragStart(e) {
-    startElement = e.target;
-    startPositionId = startElement.parentNode.getAttribute('square-id');
-    console.log("square id start : ", startPositionId)
-}
+function getValidMoves(row, col) {
+    const piece = board[row][col];
+    const moves = [];
 
-function dragOver(e) {
-    console.log("dragOver start")
-    console.log(e.target.getAttribute('square-id'))
-    e.preventDefault();
-}
+    switch (piece.piece) {
+        case 'pawn':
+            const direction = piece.color === 'white' ? -1 : 1;
+            const startRow = piece.color === 'white' ? 6 : 1;
 
-function dragDrop(e) {
-    e.stopPropagation();
-    console.log("drop function")
-    console.log(e)
-    endElement = e.target;
-    if (endElement.classList.contains('piece')) {
-        endElement = endElement.parentNode;
-    }
-    endPositionId = endElement.getAttribute('square-id');
-    console.log("square id end : ", endPositionId);
+            // Forward move
+            if (isValidPosition(row + direction, col) && !board[row + direction][col].piece) {
+                moves.push({ row: row + direction, col: col });
+                
+                // Double move from starting position
+                if (row === startRow && !board[row + 2 * direction][col].piece) {
+                    moves.push({ row: row + 2 * direction, col: col });
+                }
+            }
 
-    if(check_current_move(moves[ind])) {
-        endElement.innerHTML = '';
-        endElement.appendChild(startElement);
-        showCurrentMove.innerHTML = "Move " + moves[ind] + " is correct";
-        showCurrentMove.style.color = 'darkgreen';
+            // Capture moves
+            [-1, 1].forEach(offset => {
+                if (isValidPosition(row + direction, col + offset)) {
+                    const target = board[row + direction][col + offset];
+                    if (target.piece && target.color !== piece.color) {
+                        moves.push({ row: row + direction, col: col + offset });
+                    }
+                }
+            });
+            break;
 
-
-        // ind += 1
-        ind += 1
-        // show player win
-        if(ind == moves.length) {
-            showCurrentMove.innerHTML = "Win";
-            showCurrentMove.style.color = 'darkgreen';
-            showCurrentMove.style.fontSize = '2em';
-            showCurrentMove.style.fontWeight = 'bold';
-            showCurrentMove.style.backgroundColor = 'lightyellow';
-            showCurrentMove.style.padding = '10px';
-            showCurrentMove.style.border = '2px solid darkgreen';
-            showCurrentMove.style.borderRadius = '5px';
-
-
-            // after the player wins
+        case 'knight':
+            const knightMoves = [
+                [-2, -1], [-2, 1], [-1, -2], [-1, 2],
+                [1, -2], [1, 2], [2, -1], [2, 1]
+            ];
             
-            // update the score
-            let earlier_score = parseInt(showScore.innerHTML, 10);
-            console.log(typeof earlier_score)
-            console.log(earlier_score)
-            showScore.innerHTML = "";
-            let newScore = earlier_score  + parseInt(current_puzzle_info['RatingDeviation']);
-            console.log("new score : ", newScore);
-            console.log(typeof newScore)
+            knightMoves.forEach(([dRow, dCol]) => {
+                const newRow = row + dRow;
+                const newCol = col + dCol;
+                
+                if (isValidPosition(newRow, newCol)) {
+                    const target = board[newRow][newCol];
+                    if (!target.piece || target.color !== piece.color) {
+                        moves.push({ row: newRow, col: newCol });
+                    }
+                }
+            });
+            break;
 
-            showScore.innerHTML = newScore;
-            // shoe the next button
-            refresh_puzzle.style.display = 'block';
-
-            // refresh the puzzle
-            refreshBoard()
-            // init()
-            // refreshInit()
-            refresh_puzzle.addEventListener('click', refreshRenderBoard);
-        } 
-        else {
-            // computer will make move moves[i]
-            let start_id = move_to_index(moves[ind][0] + moves[ind][1])
-            let end_id = move_to_index(moves[ind][2] + moves[ind][3])
-            let start_element = document.querySelector('[square-id="' + start_id + '"]');
-            let end_element = document.querySelector('[square-id="' + end_id + '"]');
-            end_element.innerHTML = '';
-            end_element.append(start_element.firstChild);
-            ind += 1
-            opponentMoveShow.innerHTML = "Make the next move"
-        }
+        // Add other piece move patterns here
+        // This is a simplified version - you might want to add more complex move patterns
+        // for other pieces like bishop, rook, queen, and king
     }
-    else {
-        // donot make the move
-        console.log("not valid move")
-        let move_made = get_Move(startPositionId) + get_Move(endPositionId)
-        showCurrentMove.innerHTML = "Move " + move_made + " is incorrect";
-        showCurrentMove.style.color = 'red'; 
-    }
-}
-function refreshInit() {
-    refresh_puzzle.style.display = 'none';
-    ind = 0;
 
-    moves_str = current_puzzle_info['Moves'];
-    moves = moves_str.split(' ');
-    first_move = moves[0];
-    first_move_start = first_move[0] + first_move[1];
-    console.log("first_move_start : ", first_move_start)
-    console.log(move_to_index(first_move_start))
-    console.log(startPiecesColor[move_to_index(first_move_start) - 1])
-
-    if (startPiecesColor[move_to_index(first_move_start) - 1] == 'W') {
-        playerGo = 'black';
-    } else {
-        playerGo = 'white';
-    }
-    console.log("playergo : ", playerGo)
-    playerDisplay.textContent = playerGo;
-    console.log(moves)
-    showCurrentMove.innerHTML = "";
-    showCurrentMove.style = null;
-    opponentMoveShow.innerHTML = "";
-    opponentMoveShow.style = null;
+    return moves;
 }
 
+function isValidPosition(row, col) {
+    return row >= 0 && row < 8 && col >= 0 && col < 8;
+}
 
-
-// Render the board squares
-function refreshRenderBoard() {
-    startPieces.forEach((startPiece, i) => {
-        let sq_id = i + 1
-        square = document.querySelector('[square-id="' + sq_id + '"]');
-        square.innerHTML = ''
-        square.innerHTML = startPiece;
-        square.firstChild?.setAttribute('draggable', 'true');
-
-        // Determine the color of the pieces
-        if (startPiecesColor[i] == 'W') {
-            square.firstChild.firstChild.classList.add('white-piece');
-        } else if (startPiecesColor[i] == 'B') {
-            square.firstChild.firstChild.classList.add('black-piece');
-        }
+function highlightValidMoves() {
+    validMoves.forEach(move => {
+        const square = document.querySelector(`[data-row="${move.row}"][data-col="${move.col}"]`);
+        square.classList.add('valid-move');
     });
-    refreshInit()
 }
 
-function refreshBoard() {
-    // reset the start pieces
-    startPieces = Array(64).fill('');
-    // rest startPiecesColor
-    startPiecesColor = Array(64).fill('');
-
-    // Create the board squares
-    // Process CSV - get details and save in variable puzzle_info
-    let randomIndex;
-    do {
-        randomIndex = Math.floor(Math.random() * 1000);
-    } while (done.includes(randomIndex));
-
-    done.push(randomIndex)
-    current_puzzle_info = puzzles[randomIndex];
-
-    // Parse FEN from the selected puzzle
-    current_positions = parseFEN(current_puzzle_info['FEN']);
-
-    // Initialize board pieces
-    updatePieces(current_positions['white'], 'W');
-    updatePieces(current_positions['black'], 'B');
-    // Render the board
+function clearHighlights() {
+    document.querySelectorAll('.square').forEach(square => {
+        square.classList.remove('selected', 'valid-move');
+    });
 }
 
+function movePiece(from, to) {
+    board[to.row][to.col] = board[from.row][from.col];
+    board[from.row][from.col] = { piece: null, color: null };
+    createBoard();
+}
 
+function resetBoard() {
+    initializeBoard();
+    createBoard();
+    currentTurn = 'white';
+    selectedPiece = null;
+    validMoves = [];
+    document.getElementById('current-turn').textContent = 'Current Turn: White';
+}
 
+document.getElementById('reset-button').addEventListener('click', resetBoard);
 
-
-
-init();
+// Initialize the game
+initializeBoard();
+createBoard();

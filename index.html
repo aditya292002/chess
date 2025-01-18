@@ -3,29 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chess</title>
     <link rel="stylesheet" href="styles.css">
+    <title>Document</title>
 </head>
 <body>
-    <div class="game-container">
-        <!-- <div id="white-captures"></div>  -->
-         <h1 id="heading">Welcome to chess puzzle game</h1>
-        <h3 id="score-container">Score: <span id="score">0</span></h3>
-        <div id="game-board-parent">
-            <div id="gameboard"></div>
-        </div>
-        <!-- <div id="black-captures"></div> -->
-        <p>You play as <span id="player"></span>.</p>
-        <p id="current-move"></p>
-        <p id="opponent-move-show"></p> 
-        <p id="info-display"></p>  <!-- to display win or lose-->
-        <button id="refresh-puzzle">Next</button>
+    <div id="chess-board" class="chess-board"></div>
+    <div class="game-info">
+        <p id="current-turn">Current Turn: White</p>
+        <button id="reset-button">Reset Game</button>
     </div>
-
-
-    <script src="data.js" nonce="your-nonce-value"></script>
-    <script src="create_board.js" nonce="your-nonce-value"></script>
-    <script src="common.js" nonce="your-nonce-value"></script>
     <script src="script.js" nonce="your-nonce-value"></script>
 </body>
-</html>
+</html>l
