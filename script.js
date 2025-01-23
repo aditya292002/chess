@@ -17,43 +17,9 @@ const pieces = {
     }
 };
 
-puzzle =     {
-    "PuzzleId": "00008",
-    "FEN": "r6k/pp2r2p/4Rp1Q/3p4/8/1N1P2R1/PqP2bPP/7K b - - 0 24",
-    "Moves": "f2g3 e6e7 b2b1 b3c1 b1c1 h6c1",
-    "Rating": "1902",
-    "RatingDeviation": "76",
-    "Popularity": "95",
-    "NbPlays": "7226",
-    "Themes": "crushing hangingPiece long middlegame",
-    "GameUrl": "https://lichess.org/787zsVup/black#48",
-    "OpeningTags": ""
-}
-
-let board = [];
 let selectedPiece = null;
-let currentTurn = 'white';
 let validMoves = [];
 
-function initializeBoard() {
-    const initialSetup = [
-        ['rook', 'knight', 'bishop', 'queen', 'king', 'bishop', 'knight', 'rook'],
-        ['pawn', 'pawn', 'pawn', 'pawn', 'pawn', 'pawn', 'pawn', 'pawn'],
-        [null, null, null, null, null, null, null, null],
-        [null, null, null, null, null, null, null, null],
-        [null, null, null, null, null, null, null, null],
-        [null, null, null, null, null, null, null, null],
-        ['pawn', 'pawn', 'pawn', 'pawn', 'pawn', 'pawn', 'pawn', 'pawn'],
-        ['rook', 'knight', 'bishop', 'queen', 'king', 'bishop', 'knight', 'rook']
-    ];
-
-    board = initialSetup.map((row, i) => 
-        row.map((piece, j) => ({
-            piece: piece,
-            color: i < 2 ? 'black' : i > 5 ? 'white' : null
-        }))
-    );
-}
 
 function createBoard() {
     const boardElement = document.getElementById('chess-board');
@@ -65,10 +31,11 @@ function createBoard() {
             square.className = `square ${(i + j) % 2 === 0 ? 'white' : 'black'}`;
             square.dataset.row = i;
             square.dataset.col = j;
-                
+
             const piece = board[i][j];
-            if (piece.piece) {
-                square.innerHTML = `<span class="piece">${pieces[piece.color][piece.piece]}</span>`;
+            if(piece.piece != null) {
+                html_to_add = `<span class="piece">${pieces[piece.color][piece.piece]}</span>`;
+                square.innerHTML = html_to_add;
             }
 
             square.addEventListener('click', handleSquareClick);
@@ -80,15 +47,42 @@ function createBoard() {
 function handleSquareClick(event) {
     const row = parseInt(event.currentTarget.dataset.row);
     const col = parseInt(event.currentTarget.dataset.col);
-    
     clearHighlights();
 
     if (selectedPiece) {
         if (validMoves.some(move => move.row === row && move.col === col)) {
             movePiece(selectedPiece, { row, col });
+            move_ind += 1;
+
+            if (move_ind < moves.length) {
+                const compMoveStart = algebraic_notation_to_index(moves[move_ind].slice(0, 2));
+                const compMoveEnd = algebraic_notation_to_index(moves[move_ind].slice(2, 4));
+                computerMakeMove(compMoveStart, compMoveEnd);
+
+                const htmlElementComputer = document.getElementById("computer-move-show");
+                htmlElementComputer.innerHTML = `Computer made the move ${moves[move_ind]}`;
+
+                const square_start = document.querySelector(`[data-row="${compMoveStart[0]}"][data-col="${compMoveStart[1]}"]`);
+                square_start.classList.add('computer-move');
+                
+                const square_end = document.querySelector(`[data-row="${compMoveEnd[0]}"][data-col="${compMoveEnd[1]}"]`);
+                square_end  .classList.add('computer-move');
+                
+                move_ind += 1;
+            }
+            else {
+                const htmlElementComputer = document.getElementById("computer-move-show");
+                htmlElementComputer.innerHTML = "Solved"
+                document.getElementById('reset-button').style.display = 'block';
+                let score_p = document.getElementById('score');
+                score += parseInt(puzzle['RatingDeviation'], 10);
+                score_p.innerHTML = ""
+                score_p.innerHTML = "Score : " + score
+            }
+
             selectedPiece = null;
             validMoves = [];
-            currentTurn = currentTurn === 'white' ? 'black' : 'white';
+            // currentTurn = currentTurn === 'black' ? 'white' : 'black';
             document.getElementById('current-turn').textContent = `Current Turn: ${currentTurn.charAt(0).toUpperCase() + currentTurn.slice(1)}`;
         } else {
             selectedPiece = null;
@@ -99,7 +93,7 @@ function handleSquareClick(event) {
             selectedPiece = { row, col };
             event.currentTarget.classList.add('selected');
             validMoves = getValidMoves(row, col);
-            highlightValidMoves();
+            highlightValidMoves();  
         }
     }
 }
@@ -107,6 +101,29 @@ function handleSquareClick(event) {
 function getValidMoves(row, col) {
     const piece = board[row][col];
     const moves = [];
+
+    function addMove(newRow, newCol) {
+        if (isValidPosition(newRow, newCol)) {
+            const target = board[newRow][newCol];
+            if (!target.piece || target.color !== piece.color) {
+                moves.push({ row: newRow, col: newCol });
+                return !target.piece; // return true if space is empty (for continuing sliding moves)
+            }
+        }
+        return false;
+    }
+
+    function addSlidingMoves(directions) {
+        directions.forEach(([dRow, dCol]) => {
+            let currRow = row + dRow;
+            let currCol = col + dCol;
+            while (isValidPosition(currRow, currCol)) {
+                if (!addMove(currRow, currCol)) break;
+                currRow += dRow;
+                currCol += dCol;
+            }
+        });
+    }
 
     switch (piece.piece) {
         case 'pawn':
@@ -141,24 +158,57 @@ function getValidMoves(row, col) {
             ];
             
             knightMoves.forEach(([dRow, dCol]) => {
-                const newRow = row + dRow;
-                const newCol = col + dCol;
-                
-                if (isValidPosition(newRow, newCol)) {
-                    const target = board[newRow][newCol];
-                    if (!target.piece || target.color !== piece.color) {
-                        moves.push({ row: newRow, col: newCol });
-                    }
-                }
+                addMove(row + dRow, col + dCol);
             });
             break;
 
-        // Add other piece move patterns here
-        // This is a simplified version - you might want to add more complex move patterns
-        // for other pieces like bishop, rook, queen, and king
+        case 'bishop':
+            addSlidingMoves([
+                [-1, -1], [-1, 1], [1, -1], [1, 1]
+            ]);
+            break;
+
+        case 'rook':
+            addSlidingMoves([
+                [-1, 0], [1, 0], [0, -1], [0, 1]
+            ]);
+            break;
+
+        case 'queen':
+            addSlidingMoves([
+                [-1, -1], [-1, 1], [1, -1], [1, 1],
+                [-1, 0], [1, 0], [0, -1], [0, 1]
+            ]);
+            break;
+
+        case 'king':
+            const kingMoves = [
+                [-1, -1], [-1, 0], [-1, 1],
+                [0, -1], [0, 1],
+                [1, -1], [1, 0], [1, 1]
+            ];
+            
+            kingMoves.forEach(([dRow, dCol]) => {
+                addMove(row + dRow, col + dCol);
+            });
+            break;
     }
 
     return moves;
+}
+
+
+function computerMakeMove(st, end) {
+    rS = st[0]
+    cS = st[1]
+    rE = end[0]
+    cE = end[1]
+    board[rE][cE] = board[rS][cS]
+    board[rS][cS] = {
+        pieces: null,
+        color: null
+    }
+    createBoard();
 }
 
 function isValidPosition(row, col) {
@@ -174,7 +224,7 @@ function highlightValidMoves() {
 
 function clearHighlights() {
     document.querySelectorAll('.square').forEach(square => {
-        square.classList.remove('selected', 'valid-move');
+        square.classList.remove('selected', 'valid-move', 'computer-move');
     });
 }
 
@@ -185,9 +235,8 @@ function movePiece(from, to) {
 }
 
 function resetBoard() {
-    initializeBoard();
+    initializeBoard();   
     createBoard();
-    currentTurn = 'white';
     selectedPiece = null;
     validMoves = [];
     document.getElementById('current-turn').textContent = 'Current Turn: White';
