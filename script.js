@@ -1,6 +1,3 @@
-
-
-
 /// pieces
 const pieces_ = {
     'king': '<svg xmlns="http://www.w3.org/2000/svg" height="1em" viewBox="0 0 448 512"><!--! Font Awesome Free 6.4.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license (Commercial License) Copyright 2023 Fonticons, Inc. --><path d="M224 0c17.7 0 32 14.3 32 32V48h16c17.7 0 32 14.3 32 32s-14.3 32-32 32H256v48H408c22.1 0 40 17.9 40 40c0 5.3-1 10.5-3.1 15.4L368 400H80L3.1 215.4C1 210.5 0 205.3 0 200c0-22.1 17.9-40 40-40H192V112H176c-17.7 0-32-14.3-32-32s14.3-32 32-32h16V32c0-17.7 14.3-32 32-32zM38.6 473.4L80 432H368l41.4 41.4c4.2 4.2 6.6 10 6.6 16c0 12.5-10.1 22.6-22.6 22.6H54.6C42.1 512 32 501.9 32 489.4c0-6 2.4-11.8 6.6-16z"/></svg>',
@@ -50,56 +47,75 @@ function handleSquareClick(event) {
     clearHighlights();
 
     if (selectedPiece) {
+        console.log("A piece is already selected.");
+        
         if (validMoves.some(move => move.row === row && move.col === col)) {
+            console.log("Valid move selected.");
             movePiece(selectedPiece, { row, col });
-            move_ind += 1;
+            console.log("Move details - Start:", selectedPiece, "End:", { row, col });
 
-            if (move_ind < moves.length) {
-                const compMoveStart = algebraic_notation_to_index(moves[move_ind].slice(0, 2));
-                const compMoveEnd = algebraic_notation_to_index(moves[move_ind].slice(2, 4));
-                computerMakeMove(compMoveStart, compMoveEnd);
+            const expectedStart = algebraic_notation_to_index(moves[move_ind].slice(0, 2));
+            const expectedEnd = algebraic_notation_to_index(moves[move_ind].slice(2, 4));
 
+            if (
+                expectedStart[0] !== selectedPiece.row || 
+                expectedStart[1] !== selectedPiece.col || 
+                expectedEnd[0] !== row || 
+                expectedEnd[1] !== col
+            ) {
                 const htmlElementComputer = document.getElementById("computer-move-show");
-                htmlElementComputer.innerHTML = `Computer made the move ${moves[move_ind]}`;
-
-                const square_start = document.querySelector(`[data-row="${compMoveStart[0]}"][data-col="${compMoveStart[1]}"]`);
-                square_start.classList.add('computer-move');
-                
-                const square_end = document.querySelector(`[data-row="${compMoveEnd[0]}"][data-col="${compMoveEnd[1]}"]`);
-                square_end  .classList.add('computer-move');
-                
+                htmlElementComputer.innerHTML = `You made the wrong move, try again! Your last score: ${score}`;
+            } else {
                 move_ind += 1;
-            }
-            else {
-                const htmlElementComputer = document.getElementById("computer-move-show");
-                htmlElementComputer.innerHTML = "Solved"
-                document.getElementById('reset-button').style.display = 'block';
-                let score_p = document.getElementById('score');
-                score += parseInt(puzzle['RatingDeviation'], 10);
-                score_p.innerHTML = ""
-                score_p.innerHTML = "Score : " + score
+                
+                if (move_ind < moves.length) {
+                    const compMoveStart = algebraic_notation_to_index(moves[move_ind].slice(0, 2));
+                    const compMoveEnd = algebraic_notation_to_index(moves[move_ind].slice(2, 4));
+                    computerMakeMove(compMoveStart, compMoveEnd);
+
+                    const htmlElementComputer = document.getElementById("computer-move-show");
+                    htmlElementComputer.innerHTML = `Computer made the move ${moves[move_ind]}`;
+
+                    const squareStart = document.querySelector(`[data-row="${compMoveStart[0]}"][data-col="${compMoveStart[1]}"]`);
+                    const squareEnd = document.querySelector(`[data-row="${compMoveEnd[0]}"][data-col="${compMoveEnd[1]}"]`);
+                    squareStart?.classList.add('computer-move');
+                    squareEnd?.classList.add('computer-move');
+
+                    move_ind += 1;
+                } else {
+                    const htmlElementComputer = document.getElementById("computer-move-show");
+                    htmlElementComputer.innerHTML = "Solved";
+                    document.getElementById('reset-button').style.display = 'block';
+
+                    let scoreElement = document.getElementById('score');
+                    score += parseInt(puzzle['RatingDeviation'], 10);
+                    scoreElement.innerHTML = `Score: ${score}`;
+                }
             }
 
             selectedPiece = null;
             validMoves = [];
-            // currentTurn = currentTurn === 'black' ? 'white' : 'black';
             document.getElementById('current-turn').textContent = `Current Turn: ${currentTurn.charAt(0).toUpperCase() + currentTurn.slice(1)}`;
         } else {
+            console.log("Invalid move selected.");
             selectedPiece = null;
         }
     } else {
-        console.log("else")
-        console.log(currentTurn)
+        console.log("Selecting a new piece.");
+        
         const piece = board[row][col];
-        console.log(piece)
-        if (piece.piece && piece.color === currentTurn) {
+        
+        if (piece && piece.piece && piece.color === currentTurn) {
             selectedPiece = { row, col };
             event.currentTarget.classList.add('selected');
             validMoves = getValidMoves(row, col);
-            highlightValidMoves();  
+            highlightValidMoves();
+        } else {
+            console.log("Invalid piece selection.");
         }
     }
 }
+
 
 function getValidMoves(row, col) {
     const piece = board[row][col];
@@ -242,7 +258,6 @@ function resetBoard() {
     createBoard();
     selectedPiece = null;
     validMoves = [];
-    document.getElementById('current-turn').textContent = 'Current Turn: White';
 }
 
 document.getElementById('reset-button').addEventListener('click', resetBoard);
