@@ -5,7 +5,7 @@ var puzzle;
 var moves;
 var move_ind = 0; // denotes the index on moves array
 var currentTurn;
-var score;
+var score = 0;
 
 function algebraic_notation_to_index(x) {
     let ans = [-1, -1] // [x,y]
@@ -98,6 +98,7 @@ function initializeBoard() {
     } while (solved.includes(randomNumber));
     puzzle_ind = randomNumber;
     solved.push(puzzle_ind)
+    // puzzle_ind = 437  // make the puzzle static for testing
     puzzle = puzzles[puzzle_ind]
     moves = puzzle['Moves'].split(' ')
 
@@ -156,7 +157,6 @@ function initializeBoard() {
         color: null
     }   
     move_ind = 1;
-    score = 0;
     console.log("curreent_turn : ", currentTurn)
     console.log(board)
     console.log(moves)
