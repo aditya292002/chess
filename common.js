@@ -148,7 +148,8 @@ function initializeBoard() {
     else currentTurn = 'black'
     let current_turn_element = document.getElementById('current-turn');
     current_turn_element.innerHTML =  "";
-    current_turn_element.innerHTML =  "You play as " + currentTurn;
+    current_turn_element.innerHTML =  `You play as <b style="color: ${currentTurn === 'white' ? 'white' : 'black'};">${currentTurn}</b>. Solve in <b style="color: green;">${moves.length / 2}</b> moves`;
+    console.log("moves: ", moves)
 
     // for the first move update the baord
     board[move1_index_end[0]][move1_index_end[1]] = board[move1_index_start[0]][move1_index_start[1]] 
